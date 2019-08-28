@@ -1,10 +1,18 @@
-let player;
+let player1;
+let player2;
 let item;
 let platforms;
+let fire;
 let cursors;
 let score = 0;
 let gameover = false;
 
+let keyA;
+let keyW;
+let keyS;
+let keyD;
+
+let overpic
 
 let width;
 let height;
@@ -19,9 +27,13 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image("bg",'src/images/bg.jpg');
-        this.load.image("ground",'src/images/ground.png');
-        this.load.image("platform",'src/images/long_path.png');
+        this.load.image("bg",'./../images/bg.jpg');
+        this.load.image("ground",'./../images/ground.png');
+        this.load.image("platform",'./../images/long_path.png');
+        this.load.image("fire",'./../images/fire.png');
+        this.load.spritesheet("beaver","./../images/player.png",{ frameWidth: 68, frameHeight: 68});
+        this.load.spritesheet("dude","./../images/dude.png",{ frameWidth: 32, frameHeight: 48});
+        this.load.image("over",'./../images/game_over.png');
     }
 
     create() {
@@ -44,12 +56,123 @@ class GameScene extends Phaser.Scene {
         platforms.create(200, 400, 'platform')
         platforms.create(700, 500, 'platform');
         platforms.create(750, 220, 'platform');
-        // platforms.create(1200, 400, 'platform');
+
+        player1 = this.physics.add.sprite(250, 300, 'beaver');
+        player2 = this.physics.add.sprite(900, 300, 'dude').setScale(1.5);
+    
+        //ไม่หลุดออกนอกโลก
+        player1.setBounce(0.2)
+        player1.setCollideWorldBounds(true)
+        player2.setBounce(0.2)
+        player2.setCollideWorldBounds(true)
+
+        //ไม่ให้ตกพื้น
+        this.physics.add.collider(player1, platforms)
+        this.physics.add.collider(player2, platforms)
+
+        //สร้าง anime ให้ player1
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('beaver', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [{ key: 'beaver', frame: 4 }],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('beaver', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        //สร้าง anime ให้ player2
+        this.anims.create({
+            key: 'KeyA',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'KeyS',
+            frames: [{ key: 'dude', frame: 4 }],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'KeyD',
+            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        //สร้างปุ่มกด
+        cursors = this.input.keyboard.createCursorKeys()
+        keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+
+        //Object ตัวไฟ
+        fire = this.physics.add.image(400, 400, 'fire').setScale(1.5);
+        this.physics.add.collider(fire, platforms);
+
+        //ถ้าโดนไฟ จะ gameover 
+        this.physics.add.overlap(player1, fire, hitFire);
+        this.physics.add.overlap(player2, fire, hitFire);
+
+        //set ให้รูปยังไม่ขึ้นถ้ายังไม่แพ้
+        overpic = this.add.image(750, y, 'over').setScale(2);
+        overpic.setVisible(false);
     }
 
     update() {
+        if(gameover == true){
+            this.physics.pause();
+            overpic.setVisible(true);
+        }
 
+        if(keyA.isDown){
+            player1.setVelocityX(-330)
+            player1.anims.play('left', true)
+        }else if(keyD.isDown){
+            player1.setVelocityX(330)
+            player1.anims.play('right', true)
+        }else{
+            player1.setVelocityX(0)
+            player1.anims.play('turn', true)
+        }
+
+        if(cursors.left.isDown){
+            player2.setVelocityX(-330)
+            player2.anims.play('KeyA', true)
+        }else if(cursors.right.isDown){
+            player2.setVelocityX(330)
+            player2.anims.play('KeyD', true)
+        }else{
+            player2.setVelocityX(0)
+            player2.anims.play('KeyS', true)
+        }
+
+        if(cursors.up.isDown && player2.body.touching.down){
+            player2.setVelocityY(-330)
+        }
+        if(keyW.isDown && player1.body.touching.down){
+            player1.setVelocityY(-330)
+        }
+        
     }
+}
+
+function hitFire(player1,player2,fire){
+    console.log("collider");
+    gameover = true;
 }
 
 export default GameScene;
