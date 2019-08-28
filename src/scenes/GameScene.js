@@ -6,6 +6,8 @@ let fire;
 let cursors;
 let score = 0;
 let gameover = false;
+let scoreText1;
+let scoreText2;
 
 let keyA;
 let keyW;
@@ -13,6 +15,8 @@ let keyS;
 let keyD;
 
 let overpic
+let logs;
+let stars;
 
 let width;
 let height;
@@ -34,6 +38,8 @@ class GameScene extends Phaser.Scene {
         this.load.spritesheet("beaver","./../images/player.png",{ frameWidth: 68, frameHeight: 68});
         this.load.spritesheet("dude","./../images/dude.png",{ frameWidth: 32, frameHeight: 48});
         this.load.image("over",'./../images/game_over.png');
+        this.load.image("log",'./../images/log.png');
+        this.load.image("star",'./../images/star.png');        
     }
 
     create() {
@@ -123,19 +129,60 @@ class GameScene extends Phaser.Scene {
         fire = this.physics.add.image(400, 400, 'fire').setScale(1.5);
         this.physics.add.collider(fire, platforms);
 
-        //ถ้าโดนไฟ จะ gameover 
+        //ถ้าชนไฟ จะทำฟังก์ชั่น hitFire 
         this.physics.add.overlap(player1, fire, hitFire);
         this.physics.add.overlap(player2, fire, hitFire);
 
+        
         //set ให้รูปยังไม่ขึ้นถ้ายังไม่แพ้
         overpic = this.add.image(750, y, 'over').setScale(2);
         overpic.setVisible(false);
+        
+        //text score 
+        scoreText1 = this.add.text(16, 16, 'Score : 0', { fontSize: '32px', fill: '#000' });
+        scoreText2 = this.add.text(1200, 16, 'Score : 0', { fontSize: '32px', fill: '#000' });
+        
+        //สร้าง Object logs สำหรับ beaver
+        logs = this.physics.add.group({
+            key: 'log',
+            repeat: 4,
+            setXY: { x: 12, y: 0, stepX: 70 }
+            
+            // repeat: จำนวนที่เราจะspawn
+            // setXY: ตำแหน่ง x y ที่spawn, stepxคือระยะห่างxระหว่างแต่ละตัว
+        });
+        logs.children.iterate(function (child) {
+            child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.6));
+        });
+        
+        this.physics.add.collider(logs, platforms);
+
+        stars = this.physics.add.group({
+            key: 'star',
+            repeat: 4,
+            setXY: { x: 500, y: 0, stepX: 70 }
+            
+            // repeat: จำนวนที่เราจะspawn
+            // setXY: ตำแหน่ง x y ที่spawn, stepxคือระยะห่างxระหว่างแต่ละตัว
+        });
+        stars.children.iterate(function (child) {
+            child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.6));
+        });
+        
+        this.physics.add.collider(stars, platforms);
+        
+        //ถ้าชนเพชร จะทำฟังก์ชั่น increaseScore
+        this.physics.add.overlap(player1, logs, increaseScoreBeaver);
+        this.physics.add.overlap(player2, stars, increaseScoreDude);
+
     }
 
     update() {
         if(gameover == true){
             this.physics.pause();
             overpic.setVisible(true);
+            player1.anims.play('turn')
+            player2.anims.play('KeyS')
         }
 
         if(keyA.isDown){
@@ -170,9 +217,23 @@ class GameScene extends Phaser.Scene {
     }
 }
 
-function hitFire(player1,player2,fire){
+function hitFire(player1, player2, fire){
     console.log("collider");
     gameover = true;
+}
+
+function increaseScoreBeaver(player1, log){
+    log.disableBody(true, true);
+    score += 100;
+    scoreText1.setText('Beaver : ' + score);
+
+    
+}
+
+function increaseScoreDude(player2, star){
+    star.disableBody(true, true);
+    score += 100;
+    scoreText2.setText('Dude : ' + score);
 }
 
 export default GameScene;
